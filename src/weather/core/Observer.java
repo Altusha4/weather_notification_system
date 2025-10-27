@@ -1,4 +1,5 @@
 package weather.core;
 
-public class Observer {
+public interface Observer {
+    void update(WeatherData data);
 }
