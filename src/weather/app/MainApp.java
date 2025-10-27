@@ -6,9 +6,9 @@ import weather.observers.*;
 
 public class MainApp {
     public static void main(String[] args) {
-        System.out.println("=== WEATHER NOTIFICATION SYSTEM ===\n");
-        UpdateStrategy manual = new ManualInputStrategy();
+        WelcomeScreen.show();
 
+        UpdateStrategy manual = new ManualInputStrategy();
         WeatherStation station = new WeatherStation("Astana Weather Station", manual);
 
         station.addObserver(new PhoneDisplay("Altynay"));
