@@ -1,7 +1,7 @@
 package weather.observers;
 
-import weather.core.Observer;
-import weather.core.WeatherData;
+import static weather.core.WeatherUtils.*;
+import weather.core.*;
 
 public class PhoneDisplay implements Observer {
     String owner;
@@ -13,10 +13,10 @@ public class PhoneDisplay implements Observer {
     public void update(WeatherData data) {
         System.out.println("[Phone:" + owner + "] "
                 + data.getCity() + " | "
-                + data.getTemperature() + "°C, "
-                + data.getHumidity() + "%, "
-                + data.getPressure() + " hPa, "
-                + data.getWindSpeed() + " m/s | "
-                + data.getTimestamp());
+                + formatTemp(data.getTemperature()) + ", "
+                + formatHumidity(data.getHumidity()) + ", "
+                + formatPressure(data.getPressure()) + ", "
+                + formatWind(data.getWindSpeed()) + " | "
+                + formatTime(data.getTimestamp()));
     }
 }
