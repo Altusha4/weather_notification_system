@@ -14,6 +14,7 @@ public class MainApp {
         station.addObserver(new PhoneDisplay("Altynay"));
         station.addObserver(new WebDisplay("BlueWave Weather Portal"));
         station.addObserver(new LoggerDisplay());
+        station.addObserver(new AlertDisplay(-5, 30));
 
         System.out.println("=== Manual Input Strategy ===");
         station.updateWeather();
