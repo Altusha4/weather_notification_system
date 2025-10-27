@@ -36,6 +36,9 @@ public class MainApp {
 
         System.out.println("\n=== DEMO COMPLETE ===");
 
+        AutoUpdateService auto = new AutoUpdateService(station);
+        auto.start(10);
+
         ConsoleMenu menu = new ConsoleMenu(station);
         menu.start();
 
