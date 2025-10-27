@@ -12,6 +12,7 @@ public class MainApp {
         WeatherStation station = new WeatherStation("Astana Weather Station", manual);
 
         station.addObserver(new PhoneDisplay("Altynay"));
+        station.addObserver(new WebDisplay("BlueWave Weather Portal"));
         station.addObserver(new LoggerDisplay());
 
         System.out.println("=== Manual Input Strategy ===");
