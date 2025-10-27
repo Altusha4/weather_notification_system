@@ -42,6 +42,9 @@ public class MainApp {
         ConsoleMenu menu = new ConsoleMenu(station);
         menu.start();
 
+        ShutdownManager shutdown = new ShutdownManager(auto);
+        shutdown.shutdown();
+
         System.out.println("\n=== PROGRAM CLOSED ===");
     }
 }
