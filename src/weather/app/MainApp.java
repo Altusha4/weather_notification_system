@@ -17,6 +17,9 @@ public class MainApp {
         station.addObserver(new AlertDisplay(-5, 30));
         station.addObserver(new StatisticsDisplay());
 
+        HistoryCollector history = new HistoryCollector();
+        station.addObserver(history);
+
         System.out.println("=== Manual Input Strategy ===");
         station.updateWeather();
 
@@ -28,11 +31,15 @@ public class MainApp {
         station.setStrategy(new ScheduledBatchStrategy("Astana", 3));
         station.updateWeather();
 
+        history.printSummary();
+
         System.out.println("\n=== DEMO COMPLETE ===");
 
         System.out.println("\nNow you can continue using the system interactively.");
         ConsoleMenu menu = new ConsoleMenu(station);
         menu.start();
+
+        ReportGenerator.export(history, "weather_report.txt");
 
         System.out.println("\n=== PROGRAM CLOSED ===");
     }
