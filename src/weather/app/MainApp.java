@@ -27,6 +27,12 @@ public class MainApp {
         station.setStrategy(new ScheduledBatchStrategy("Astana", 3));
         station.updateWeather();
 
-        System.out.println("\n=== END OF DEMO ===");
+        System.out.println("\n=== DEMO COMPLETE ===");
+
+        System.out.println("\nNow you can continue using the system interactively.");
+        ConsoleMenu menu = new ConsoleMenu(station);
+        menu.start();
+
+        System.out.println("\n=== PROGRAM CLOSED ===");
     }
 }
