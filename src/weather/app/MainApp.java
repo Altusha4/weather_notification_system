@@ -15,6 +15,7 @@ public class MainApp {
         station.addObserver(new WebDisplay("BlueWave Weather Portal"));
         station.addObserver(new LoggerDisplay());
         station.addObserver(new AlertDisplay(-5, 30));
+        station.addObserver(new StatisticsDisplay());
 
         System.out.println("=== Manual Input Strategy ===");
         station.updateWeather();
