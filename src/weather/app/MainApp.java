@@ -32,14 +32,12 @@ public class MainApp {
         station.updateWeather();
 
         history.printSummary();
+        ReportGenerator.export(history, "weather_report.txt");
 
         System.out.println("\n=== DEMO COMPLETE ===");
 
-        System.out.println("\nNow you can continue using the system interactively.");
         ConsoleMenu menu = new ConsoleMenu(station);
         menu.start();
-
-        ReportGenerator.export(history, "weather_report.txt");
 
         System.out.println("\n=== PROGRAM CLOSED ===");
     }
