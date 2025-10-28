@@ -1,22 +1,21 @@
 package weather.app;
 
 import weather.core.*;
-import weather.strategy.*;
 import weather.observers.*;
+import weather.strategy.*;
 
 public class MainApp {
     public static void main(String[] args) {
         WelcomeScreen.show();
 
-        UpdateStrategy manual = new ManualInputStrategy();
-        WeatherStation station = new WeatherStation("Astana Weather Station", manual);
+        UpdateStrategy initialStrategy = new ManualInputStrategy();
+        WeatherStation station = new WeatherStation("Astana Weather Station", initialStrategy);
 
         station.addObserver(new PhoneDisplay("Altynay"));
         station.addObserver(new WebDisplay("BlueWave Weather Portal"));
         station.addObserver(new LoggerDisplay());
         station.addObserver(new AlertDisplay(-5, 30));
         station.addObserver(new StatisticsDisplay());
-
         HistoryCollector history = new HistoryCollector();
         station.addObserver(history);
 
@@ -31,18 +30,17 @@ public class MainApp {
         station.setStrategy(new ScheduledBatchStrategy("Astana", 3));
         station.updateWeather();
 
-        history.printSummary();
-        ReportGenerator.export(history, "weather_report.txt");
-
         System.out.println("\n=== DEMO COMPLETE ===");
-
-        AutoUpdateService auto = new AutoUpdateService(station);
-        auto.start(10);
+        System.out.println("Starting interactive menu...\n");
 
         ConsoleMenu menu = new ConsoleMenu(station);
         menu.start();
 
-        ShutdownManager shutdown = new ShutdownManager(auto);
+        System.out.println("\n=== FINALIZING ===");
+        history.printSummary();
+        ReportGenerator.export(history, "weather_report.txt");
+
+        ShutdownManager shutdown = new ShutdownManager(((ConsoleMenu) menu).getAutoService());
         shutdown.shutdown();
 
         System.out.println("\n=== PROGRAM CLOSED ===");

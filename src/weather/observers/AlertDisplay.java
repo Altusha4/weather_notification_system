@@ -1,26 +1,37 @@
 package weather.observers;
 
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import weather.core.Observer;
 import weather.core.WeatherData;
 
 public class AlertDisplay implements Observer {
-    private final double minTemp;
-    private final double maxTemp;
-
-    public AlertDisplay(double minTemp, double maxTemp) {
-        this.minTemp = minTemp;
-        this.maxTemp = maxTemp;
-    }
+    private final Map<String, List<Double>> cityTemperatures = new HashMap<>();
 
     @Override
     public void update(WeatherData data) {
+        String city = data.getCity();
         double temp = data.getTemperature();
-        if (temp < minTemp) {
-            System.out.println("[ALERT] Temperature too low in " + data.getCity() + ": " + temp + "°C");
-        } else if (temp > maxTemp) {
-            System.out.println("[ALERT] Temperature too high in " + data.getCity() + ": " + temp + "°C");
+
+        cityTemperatures.computeIfAbsent(city, k -> new ArrayList<>()).add(temp);
+        List<Double> temps = cityTemperatures.get(city);
+
+        if (temps.size() >= 3) {
+            double avg = temps.stream().mapToDouble(Double::doubleValue).average().orElse(temp);
+            double deviation = Math.abs(temp - avg);
+
+            if (deviation > 10) {
+                System.out.printf("🚨 [EXTREME] %s: %.1f°C (avg: %.1f°C, deviation: %.1f°C)%n",
+                        city, temp, avg, deviation);
+            } else if (deviation > 5) {
+                System.out.printf("⚠️  [ALERT] %s: %.1f°C (avg: %.1f°C)%n", city, temp, avg);
+            } else {
+                System.out.printf("✅ [NORMAL] %s: %.1f°C%n", city, temp);
+            }
         } else {
-            System.out.println("[ALERT] Temperature normal in " + data.getCity() + ": " + temp + "°C");
+            System.out.printf("[ALERT] %s: %.1f°C (collecting data...)%n", city, temp);
         }
     }
 }

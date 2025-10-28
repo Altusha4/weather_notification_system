@@ -9,22 +9,32 @@ public class ManualInputStrategy implements UpdateStrategy {
 
     @Override
     public WeatherData fetchData() {
-        System.out.println("Enter city: ");
-        String city = scanner.nextLine();
+        System.out.print("Enter city: ");
+        String city = scanner.nextLine().trim();
+        if (city.isEmpty()) city = "Unknown";
 
-        System.out.println("Enter temperature (°C): ");
-        double temp = scanner.nextDouble();
-
-        System.out.println("Enter humidity (%): ");
-        double hum = scanner.nextDouble();
-
-        System.out.println("Enter pressure (hPa): ");
-        double press = scanner.nextDouble();
-
-        System.out.println("Enter wind speed (m/s): ");
-        double wind = scanner.nextDouble();
-        scanner.nextLine();
+        double temp = readValidDouble("Enter temperature (°C): ", -50, 60);
+        double hum = readValidDouble("Enter humidity (%): ", 0, 100);
+        double press = readValidDouble("Enter pressure (hPa): ", 800, 1100);
+        double wind = readValidDouble("Enter wind speed (m/s): ", 0, 150);
 
         return new WeatherData(city, temp, hum, press, wind, Instant.now());
+    }
+
+    private double readValidDouble(String prompt, double min, double max) {
+        while (true) {
+            try {
+                System.out.print(prompt);
+                double value = scanner.nextDouble();
+                scanner.nextLine();
+                if (value >= min && value <= max) {
+                    return value;
+                }
+                System.out.printf("❌ Please enter value between %.0f and %.0f\n", min, max);
+            } catch (Exception e) {
+                System.out.println("❌ Please enter a valid number");
+                scanner.nextLine();
+            }
+        }
     }
 }

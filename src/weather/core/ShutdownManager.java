@@ -14,6 +14,6 @@ public class ShutdownManager {
         }
         System.out.println("All background tasks stopped successfully.");
         System.out.println("Thank you for using the Weather Notification System!");
-        System.out.println("==============================================\n");
+        System.out.println("==============================================");
     }
 }
