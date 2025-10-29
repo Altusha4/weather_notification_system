@@ -1,7 +1,0 @@
-package weather.core;
-
-public interface Subject {
-    void addObserver(Observer observer);
-    void removeObserver(Observer observer);
-    void  notifyObservers(WeatherData data);
-}
