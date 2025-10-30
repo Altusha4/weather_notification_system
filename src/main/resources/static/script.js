@@ -1,5 +1,85 @@
 const API_BASE = 'http://localhost:8080/api/weather';
 
+// Weather data configuration
+const cityWeatherData = {
+    "Astana": {
+        baseTemp: 15,
+        tempRange: { min: -20, max: 35 },
+        baseHumidity: 60,
+        humidityRange: { min: 30, max: 90 },
+        basePressure: 1013,
+        pressureRange: { min: 980, max: 1040 },
+        baseWind: 3,
+        windRange: { min: 0, max: 15 },
+        description: "Continental climate with extreme temperatures"
+    },
+    "Almaty": {
+        baseTemp: 18,
+        tempRange: { min: -10, max: 38 },
+        baseHumidity: 55,
+        humidityRange: { min: 25, max: 85 },
+        basePressure: 950,
+        pressureRange: { min: 930, max: 970 },
+        baseWind: 2,
+        windRange: { min: 0, max: 12 },
+        description: "Mountain climate with mild winters"
+    },
+    "Karaganda": {
+        baseTemp: 12,
+        tempRange: { min: -25, max: 32 },
+        baseHumidity: 50,
+        humidityRange: { min: 20, max: 80 },
+        basePressure: 1005,
+        pressureRange: { min: 980, max: 1020 },
+        baseWind: 4,
+        windRange: { min: 1, max: 18 },
+        description: "Industrial city with variable climate"
+    },
+    "Pavlodar": {
+        baseTemp: 14,
+        tempRange: { min: -22, max: 34 },
+        baseHumidity: 65,
+        humidityRange: { min: 35, max: 95 },
+        basePressure: 1008,
+        pressureRange: { min: 985, max: 1030 },
+        baseWind: 5,
+        windRange: { min: 2, max: 20 },
+        description: "Northern city with humid climate"
+    },
+    "Shymkent": {
+        baseTemp: 20,
+        tempRange: { min: -5, max: 42 },
+        baseHumidity: 45,
+        humidityRange: { min: 15, max: 75 },
+        basePressure: 995,
+        pressureRange: { min: 970, max: 1010 },
+        baseWind: 3,
+        windRange: { min: 0, max: 14 },
+        description: "Southern city with hot summers"
+    },
+    "Aktobe": {
+        baseTemp: 13,
+        tempRange: { min: -18, max: 36 },
+        baseHumidity: 58,
+        humidityRange: { min: 28, max: 88 },
+        basePressure: 1002,
+        pressureRange: { min: 975, max: 1025 },
+        baseWind: 6,
+        windRange: { min: 2, max: 22 },
+        description: "Western city with windy conditions"
+    }
+};
+
+const weatherDescriptions = {
+    hot: ["Sunny and hot", "Clear skies", "Heat wave", "Dry and sunny"],
+    warm: ["Partly cloudy", "Pleasant weather", "Mild conditions", "Clear"],
+    mild: ["Cloudy", "Overcast", "Light breeze", "Comfortable"],
+    cool: ["Chilly", "Cool breeze", "Mostly cloudy", "Fresh"],
+    cold: ["Cold", "Freezing", "Frosty", "Bitter cold"],
+    extreme: ["Extreme conditions", "Severe weather", "Storm warning", "Dangerous cold"]
+};
+
+// App state
 let appState = {
     updateCount: 0,
     observerCount: 0,
@@ -15,6 +95,7 @@ let temperatureData = {
     timestamps: []
 };
 
+// Utility functions
 function showNotification(message, type = 'info', duration = 4000) {
     const container = document.getElementById('notificationContainer');
     const notification = document.createElement('div');
@@ -49,6 +130,264 @@ function updateUI() {
     document.getElementById('updateCount').textContent = appState.updateCount;
 }
 
+// Weather data generation functions
+function generateCityWeather(cityName) {
+    const cityData = cityWeatherData[cityName];
+    if (!cityData) {
+        return generateRandomWeather(cityName);
+    }
+
+    const tempVariation = (Math.random() - 0.5) * 10;
+    const temperature = cityData.baseTemp + tempVariation;
+
+    const humidityVariation = (Math.random() - 0.5) * 20;
+    const humidity = Math.max(cityData.humidityRange.min,
+        Math.min(cityData.humidityRange.max,
+            cityData.baseHumidity + humidityVariation));
+
+    const pressureVariation = (Math.random() - 0.5) * 20;
+    const pressure = Math.max(cityData.pressureRange.min,
+        Math.min(cityData.pressureRange.max,
+            cityData.basePressure + pressureVariation));
+
+    const windVariation = Math.random() * 4;
+    const windSpeed = Math.max(cityData.windRange.min,
+        Math.min(cityData.windRange.max,
+            cityData.baseWind + windVariation));
+
+    let descriptionType;
+    if (temperature >= 30) descriptionType = 'hot';
+    else if (temperature >= 20) descriptionType = 'warm';
+    else if (temperature >= 10) descriptionType = 'mild';
+    else if (temperature >= 0) descriptionType = 'cool';
+    else if (temperature >= -15) descriptionType = 'cold';
+    else descriptionType = 'extreme';
+
+    const descriptions = weatherDescriptions[descriptionType];
+    const description = descriptions[Math.floor(Math.random() * descriptions.length)];
+
+    return {
+        city: cityName,
+        temperature: parseFloat(temperature.toFixed(1)),
+        humidity: parseFloat(humidity.toFixed(1)),
+        pressure: parseFloat(pressure.toFixed(1)),
+        windSpeed: parseFloat(windSpeed.toFixed(1)),
+        description: description,
+        timestamp: new Date().toISOString()
+    };
+}
+
+function generateRandomWeather(cityName) {
+    const temperature = (Math.random() * 40) - 10;
+    const humidity = 30 + Math.random() * 60;
+    const pressure = 970 + Math.random() * 60;
+    const windSpeed = Math.random() * 15;
+
+    return {
+        city: cityName,
+        temperature: parseFloat(temperature.toFixed(1)),
+        humidity: parseFloat(humidity.toFixed(1)),
+        pressure: parseFloat(pressure.toFixed(1)),
+        windSpeed: parseFloat(windSpeed.toFixed(1)),
+        description: "Standard weather conditions",
+        timestamp: new Date().toISOString()
+    };
+}
+
+function getAvailableCities() {
+    return Object.keys(cityWeatherData);
+}
+
+function getCityInfo(cityName) {
+    return cityWeatherData[cityName] || null;
+}
+
+function showCityClimateInfo(city) {
+    const info = getCityInfo(city);
+    if (info) {
+        showNotification(
+            `${city}: ${info.description}. Typical temp: ${info.tempRange.min}°C to ${info.tempRange.max}°C`,
+            'info'
+        );
+    }
+}
+
+// Manual Input Functions
+function toggleManualInput() {
+    const strategyType = document.getElementById('strategySelect').value;
+    const manualFields = document.getElementById('manualInputFields');
+
+    console.log('Strategy changed to:', strategyType);
+
+    if (strategyType === 'manual') {
+        manualFields.style.display = 'block';
+        // Set default values
+        document.getElementById('manualTemp').value = '20.0';
+        document.getElementById('manualHumidity').value = '60';
+        document.getElementById('manualPressure').value = '1013';
+        document.getElementById('manualWind').value = '3.0';
+    } else {
+        manualFields.style.display = 'none';
+    }
+}
+
+async function applyStrategy() {
+    const strategyType = document.getElementById('strategySelect').value;
+    const city = document.getElementById('cityInput').value.trim() || 'Astana';
+
+    if (!city) {
+        showNotification('Please enter a city name', 'error');
+        return;
+    }
+
+    if (strategyType === 'manual') {
+        await applyManualStrategy(city);
+    } else {
+        await applyAutoStrategy(strategyType, city);
+    }
+}
+
+async function applyManualStrategy(city) {
+    const temp = parseFloat(document.getElementById('manualTemp').value);
+    const humidity = parseFloat(document.getElementById('manualHumidity').value);
+    const pressure = parseFloat(document.getElementById('manualPressure').value);
+    const wind = parseFloat(document.getElementById('manualWind').value);
+
+    console.log('Manual data:', { temp, humidity, pressure, wind });
+
+    // Validate manual input
+    if (isNaN(temp) || isNaN(humidity) || isNaN(pressure) || isNaN(wind)) {
+        showNotification('Please fill all manual input fields', 'error');
+        return;
+    }
+
+    if (temp < -50 || temp > 60) {
+        showNotification('Please enter valid temperature (-50 to 60°C)', 'error');
+        return;
+    }
+    if (humidity < 0 || humidity > 100) {
+        showNotification('Please enter valid humidity (0-100%)', 'error');
+        return;
+    }
+    if (pressure < 800 || pressure > 1100) {
+        showNotification('Please enter valid pressure (800-1100 hPa)', 'error');
+        return;
+    }
+    if (wind < 0 || wind > 150) {
+        showNotification('Please enter valid wind speed (0-150 m/s)', 'error');
+        return;
+    }
+
+    try {
+        const button = event.target;
+        button.classList.add('loading');
+        button.disabled = true;
+
+        // First set manual strategy
+        const strategyResponse = await fetch(`${API_BASE}/strategy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'manual', city: city })
+        });
+
+        const strategyResult = await strategyResponse.json();
+        console.log('Strategy result:', strategyResult);
+
+        if (strategyResult.status === 'success') {
+            // Set manual data
+            const manualResponse = await fetch(`${API_BASE}/manual/data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    city: city,
+                    temperature: temp,
+                    humidity: humidity,
+                    pressure: pressure,
+                    windSpeed: wind
+                })
+            });
+
+            const manualResult = await manualResponse.json();
+            console.log('Manual data result:', manualResult);
+
+            if (manualResult.status === 'success') {
+                // Update weather with manual data
+                await updateWeatherWithManualData();
+
+                updateAppState({
+                    currentStrategy: 'Manual Input'
+                });
+
+                showNotification('Manual strategy applied with your data!', 'success');
+            } else {
+                showNotification('Failed to set manual data: ' + manualResult.message, 'error');
+            }
+        } else {
+            showNotification('Failed to set strategy: ' + strategyResult.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to apply manual strategy: ' + error.message, 'error');
+        console.error('Manual strategy error:', error);
+    } finally {
+        const button = event.target;
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+async function applyAutoStrategy(strategyType, city) {
+    try {
+        const button = event.target;
+        button.classList.add('loading');
+        button.disabled = true;
+
+        const response = await fetch(`${API_BASE}/strategy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: strategyType, city: city })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            updateAppState({
+                currentStrategy: result.strategyClass.replace('Strategy', '')
+            });
+            showNotification(`Strategy set to: ${result.strategyClass}`, 'success');
+        } else {
+            showNotification('Failed to set strategy: ' + result.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to set strategy: ' + error.message, 'error');
+    } finally {
+        const button = event.target;
+        button.classList.remove('loading');
+        button.disabled = false;
+    }
+}
+
+async function updateWeatherWithManualData() {
+    try {
+        const response = await fetch(`${API_BASE}/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+            displayWeatherData(result.data);
+            updateAppState({
+                updateCount: appState.updateCount + 1
+            });
+            showNotification('Weather updated with manual data', 'success');
+        }
+    } catch (error) {
+        showNotification('Failed to update weather: ' + error.message, 'error');
+    }
+}
+
+// Chart functions
 function initializeTemperatureChart() {
     const ctx = document.getElementById('temperatureChart').getContext('2d');
 
@@ -135,6 +474,7 @@ function initializeTemperatureChart() {
     });
     loadChartData();
 }
+
 function addTemperatureData(city, temperature, timestamp) {
     const selectedCity = document.getElementById('chartCity').value;
 
@@ -165,6 +505,7 @@ function addTemperatureData(city, temperature, timestamp) {
     updateChartStats();
     saveChartData();
 }
+
 function updateChartStats() {
     if (temperatureData.temperatures.length === 0) return;
 
@@ -224,6 +565,7 @@ function saveChartData() {
         console.warn('Could not save chart data to localStorage');
     }
 }
+
 function loadChartData() {
     try {
         const saved = localStorage.getItem('weatherChartData');
@@ -243,41 +585,37 @@ function loadChartData() {
     }
 }
 
-async function setStrategy() {
-    const strategyType = document.getElementById('strategySelect').value;
-    const city = document.getElementById('cityInput').value.trim() || 'Astana';
-
-    if (!city) {
-        showNotification('Please enter a city name', 'error');
-        return;
-    }
-    try {
-        const button = event.target;
-        button.classList.add('loading');
-        button.disabled = true;
-
-        const response = await fetch(`${API_BASE}/strategy`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: strategyType, city: city })
+function filterChartDataByCity(city) {
+    if (city === 'All Cities') {
+        if (temperatureChart && temperatureData.temperatures.length > 0) {
+            temperatureChart.data.labels = temperatureData.labels;
+            temperatureChart.data.datasets[0].data = temperatureData.temperatures;
+            temperatureChart.update();
+        }
+    } else {
+        const filteredData = {
+            labels: [],
+            temperatures: [],
+            cities: [],
+            timestamps: []
+        };
+        temperatureData.cities.forEach((dataCity, index) => {
+            if (dataCity === city) {
+                filteredData.labels.push(temperatureData.labels[index]);
+                filteredData.temperatures.push(temperatureData.temperatures[index]);
+                filteredData.cities.push(temperatureData.cities[index]);
+                filteredData.timestamps.push(temperatureData.timestamps[index]);
+            }
         });
-
-        const result = await response.json();
-
-        updateAppState({
-            currentStrategy: result.strategyClass.replace('Strategy', '')
-        });
-
-        showNotification(`Strategy set to: ${result.strategyClass}`, 'success');
-    } catch (error) {
-        showNotification('Failed to set strategy: ' + error.message, 'error');
-    } finally {
-        const button = event.target;
-        button.classList.remove('loading');
-        button.disabled = false;
+        if (temperatureChart) {
+            temperatureChart.data.labels = filteredData.labels;
+            temperatureChart.data.datasets[0].data = filteredData.temperatures;
+            temperatureChart.update();
+        }
     }
 }
 
+// API functions
 async function updateWeather() {
     try {
         const button = event.target;
@@ -296,6 +634,8 @@ async function updateWeather() {
                 currentStrategy: result.strategy
             });
             showNotification(`Weather updated using ${result.strategy} strategy`, 'success');
+        } else {
+            showNotification('Failed to update weather: ' + result.message, 'error');
         }
     } catch (error) {
         showNotification('Failed to update weather: ' + error.message, 'error');
@@ -365,12 +705,12 @@ async function showObservers() {
         const response = await fetch(`${API_BASE}/observers`);
         const info = await response.json();
 
-        updateAppState({ observerCount: info.count });
+        updateAppState({ observerCount: info.totalCount });
 
         document.getElementById('observersOutput').innerHTML = `
             <div class="pattern-result">
                 <h4>Observer Pattern Info</h4>
-                <p><strong>Active Observers:</strong> ${info.count}</p>
+                <p><strong>Active Observers:</strong> ${info.totalCount}</p>
                 <p><strong>Observer Types:</strong></p>
                 <ul style="margin-left: 20px; margin-top: 8px;">
                     ${info.types.map(type => `<li>${type}</li>`).join('')}
@@ -516,6 +856,7 @@ async function showAllPatterns() {
     }
 }
 
+// Initialization
 async function initializeApp() {
     try {
         initializeTemperatureChart();
@@ -523,45 +864,24 @@ async function initializeApp() {
         await getStatus();
         await showObservers();
 
+        // Initialize manual input fields state
+        toggleManualInput();
+
+        // Add city info display when city input changes
+        document.getElementById('cityInput').addEventListener('change', function() {
+            showCityClimateInfo(this.value);
+        });
+
         document.getElementById('chartCity').addEventListener('change', function() {
             const selectedCity = this.value;
             showNotification(`Now tracking temperature for ${selectedCity}`, 'info');
             filterChartDataByCity(selectedCity);
         });
+
         showNotification('Weather Patterns Demo ready!', 'success');
 
     } catch (error) {
         showNotification('Failed to initialize app', 'error');
-    }
-}
-
-function filterChartDataByCity(city) {
-    if (city === 'All Cities') {
-        if (temperatureChart && temperatureData.temperatures.length > 0) {
-            temperatureChart.data.labels = temperatureData.labels;
-            temperatureChart.data.datasets[0].data = temperatureData.temperatures;
-            temperatureChart.update();
-        }
-    } else {
-        const filteredData = {
-            labels: [],
-            temperatures: [],
-            cities: [],
-            timestamps: []
-        };
-        temperatureData.cities.forEach((dataCity, index) => {
-            if (dataCity === city) {
-                filteredData.labels.push(temperatureData.labels[index]);
-                filteredData.temperatures.push(temperatureData.temperatures[index]);
-                filteredData.cities.push(temperatureData.cities[index]);
-                filteredData.timestamps.push(temperatureData.timestamps[index]);
-            }
-        });
-        if (temperatureChart) {
-            temperatureChart.data.labels = filteredData.labels;
-            temperatureChart.data.datasets[0].data = filteredData.temperatures;
-            temperatureChart.update();
-        }
     }
 }
 

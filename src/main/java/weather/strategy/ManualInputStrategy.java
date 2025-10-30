@@ -1,37 +1,54 @@
 package weather.strategy;
 import weather.core.WeatherData;
 import java.time.Instant;
-import java.util.Scanner;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ManualInputStrategy implements UpdateStrategy {
-    Scanner scanner = new Scanner(System.in);
+    private final Map<String, Double> manualData = new HashMap<>();
+    private String currentCity = "Unknown";
+
+    public void setManualData(String city, double temperature, double humidity,
+                              double pressure, double windSpeed) {
+        this.currentCity = city;
+        manualData.clear();
+        manualData.put("temperature", temperature);
+        manualData.put("humidity", humidity);
+        manualData.put("pressure", pressure);
+        manualData.put("windSpeed", windSpeed);
+
+        System.out.println("[ManualInput] Data set for " + city +
+                ": " + temperature + "°C, " + humidity + "%, " +
+                pressure + " hPa, " + windSpeed + " m/s");
+    }
     @Override
     public WeatherData fetchData() {
-        System.out.print("Enter city: ");
-        String city = scanner.nextLine().trim();
-        if (city.isEmpty()) city = "Unknown";
-
-        double temp = readValidDouble("Enter temperature (°C): ", -50, 60);
-        double hum = readValidDouble("Enter humidity (%): ", 0, 100);
-        double press = readValidDouble("Enter pressure (hPa): ", 800, 1100);
-        double wind = readValidDouble("Enter wind speed (m/s): ", 0, 150);
-
-        return new WeatherData(city, temp, hum, press, wind, Instant.now());
-    }
-    private double readValidDouble(String prompt, double min, double max) {
-        while (true) {
-            try {
-                System.out.print(prompt);
-                double value = scanner.nextDouble();
-                scanner.nextLine();
-                if (value >= min && value <= max) {
-                    return value;
-                }
-                System.out.printf("❌ Please enter value between %.0f and %.0f\n", min, max);
-            } catch (Exception e) {
-                System.out.println("❌ Please enter a valid number");
-                scanner.nextLine();
-            }
+        if (manualData.isEmpty()) {
+            System.out.println("[ManualInput] No manual data provided, using defaults");
+            return new WeatherData(currentCity, 20.0, 60.0, 1013.0, 3.0, Instant.now());
         }
+
+        double temp = manualData.getOrDefault("temperature", 20.0);
+        double hum = manualData.getOrDefault("humidity", 60.0);
+        double press = manualData.getOrDefault("pressure", 1013.0);
+        double wind = manualData.getOrDefault("windSpeed", 3.0);
+
+        WeatherData data = new WeatherData(currentCity, temp, hum, press, wind, Instant.now());
+        System.out.println("[ManualInput] Returning manual data: " + data);
+
+        return data;
+    }
+    public boolean hasData() {
+        return !manualData.isEmpty();
+    }
+    public void clearData() {
+        manualData.clear();
+        System.out.println("[ManualInput] Manual data cleared");
+    }
+    public String getCurrentCity() {
+        return currentCity;
+    }
+    public Map<String, Double> getManualData() {
+        return new HashMap<>(manualData);
     }
 }

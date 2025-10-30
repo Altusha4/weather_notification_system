@@ -2,56 +2,79 @@ package weather.core;
 import weather.strategy.UpdateStrategy;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class WeatherStation implements Subject {
     private String name;
     private UpdateStrategy strategy;
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new CopyOnWriteArrayList<>();
     private WeatherData lastData;
 
-    private static WeatherStation instance;
+    private static volatile WeatherStation instance;
 
     private WeatherStation() {
         System.out.println("[WeatherStation] Singleton instance created");
     }
-    public static synchronized WeatherStation getInstance() {
+    public static WeatherStation getInstance() {
         if (instance == null) {
-            instance = new WeatherStation();
+            synchronized (WeatherStation.class) {
+                if (instance == null) {
+                    instance = new WeatherStation();
+                }
+            }
         }
         return instance;
     }
     public void initialize(String name, UpdateStrategy strategy) {
-        this.name = name;
-        this.strategy = strategy;
+        this.name = Objects.requireNonNull(name, "Station name cannot be null");
+        this.strategy = Objects.requireNonNull(strategy, "Strategy cannot be null");
         System.out.println("[WeatherStation] Initialized: " + name + " with " +
                 strategy.getClass().getSimpleName());
     }
     public void reinitialize(String name, UpdateStrategy strategy) {
-        this.name = name;
-        setStrategy(strategy); // используем существующий метод
+        this.name = Objects.requireNonNull(name, "Station name cannot be null");
+        setStrategy(strategy);
         System.out.println("[WeatherStation] Reinitialized: " + name);
     }
     @Override
     public void addObserver(Observer observer) {
-        observers.add(observer);
-        System.out.println("[WeatherStation] Observer added: " +
-                observer.getClass().getSimpleName());
+        Objects.requireNonNull(observer, "Observer cannot be null");
+        if (!observers.contains(observer)) {
+            observers.add(observer);
+            System.out.println("[WeatherStation] Observer added: " +
+                    observer.getClass().getSimpleName());
+        }
     }
     @Override
     public void removeObserver(Observer observer) {
-        observers.remove(observer);
-        System.out.println("[WeatherStation] Observer removed: " +
-                observer.getClass().getSimpleName());
+        Objects.requireNonNull(observer, "Observer cannot be null");
+        if (observers.remove(observer)) {
+            System.out.println("[WeatherStation] Observer removed: " +
+                    observer.getClass().getSimpleName());
+        }
     }
     @Override
     public void notifyObservers(WeatherData data) {
+        Objects.requireNonNull(data, "Weather data cannot be null");
+
+        if (observers.isEmpty()) {
+            System.out.println("[WeatherStation] No observers to notify");
+            return;
+        }
+
         System.out.println("[WeatherStation] Notifying " + observers.size() + " observers");
         for (Observer observer : observers) {
-            observer.update(data);
+            try {
+                observer.update(data);
+            } catch (Exception e) {
+                System.err.println("[WeatherStation] Error notifying observer " +
+                        observer.getClass().getSimpleName() + ": " + e.getMessage());
+            }
         }
     }
     public void setStrategy(UpdateStrategy strategy) {
-        this.strategy = strategy;
+        this.strategy = Objects.requireNonNull(strategy, "Strategy cannot be null");
         System.out.println("[WeatherStation] Strategy set to: " +
                 strategy.getClass().getSimpleName());
     }
@@ -62,9 +85,13 @@ public class WeatherStation implements Subject {
         }
         System.out.println("[WeatherStation] Updating weather with " +
                 strategy.getClass().getSimpleName());
-        WeatherData newData = strategy.fetchData();
-        lastData = newData;
-        notifyObservers(newData);
+        try {
+            WeatherData newData = strategy.fetchData();
+            lastData = newData;
+            notifyObservers(newData);
+        } catch (Exception e) {
+            System.err.println("[WeatherStation] Error fetching weather data: " + e.getMessage());
+        }
     }
     public WeatherData getLastData() {
         return lastData;
@@ -82,6 +109,15 @@ public class WeatherStation implements Subject {
     public List<Observer> getObservers() {
         return new ArrayList<>(observers);
     }
+    public int getObserverCount() {
+        return observers.size();
+    }
+    public boolean hasObservers() {
+        return !observers.isEmpty();
+    }
+    public boolean hasData() {
+        return lastData != null;
+    }
     public String getStatus() {
         return String.format(
                 "WeatherStation{name='%s', strategy=%s, observers=%d, hasData=%s}",
@@ -91,8 +127,24 @@ public class WeatherStation implements Subject {
                 lastData != null
         );
     }
+    public void clearObservers() {
+        int count = observers.size();
+        observers.clear();
+        System.out.println("[WeatherStation] Cleared " + count + " observers");
+    }
+    public void removeAllObservers() {
+        clearObservers();
+    }
     public static void resetInstance() {
-        instance = null;
-        System.out.println("[WeatherStation] Instance reset");
+        synchronized (WeatherStation.class) {
+            instance = null;
+            System.out.println("[WeatherStation] Singleton instance reset");
+        }
+    }
+    public static boolean isInitialized() {
+        return instance != null;
+    }
+    public UpdateStrategy getCurrentStrategy() {
+        return this.strategy;
     }
 }

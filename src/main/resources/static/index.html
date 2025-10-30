@@ -51,7 +51,7 @@
                 <p class="card-description">Switch between different weather data update algorithms</p>
                 <div class="form-group">
                     <label class="form-label">Select Strategy:</label>
-                    <select class="form-select" id="strategySelect">
+                    <select class="form-select" id="strategySelect" onchange="toggleManualInput()">
                         <option value="manual">📝 Manual Input</option>
                         <option value="sensor">📡 Real-Time Sensor</option>
                         <option value="batch">📦 Scheduled Batch</option>
@@ -69,7 +69,25 @@
                         <option value="Aktobe">
                     </datalist>
                 </div>
-                <button class="btn btn-success" onclick="setStrategy()">
+                <div id="manualInputFields" class="manual-input-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Temperature (°C):</label>
+                        <input type="number" class="form-input" id="manualTemp" placeholder="e.g., 25.5" step="0.1" min="-50" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Humidity (%):</label>
+                        <input type="number" class="form-input" id="manualHumidity" placeholder="e.g., 60" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pressure (hPa):</label>
+                        <input type="number" class="form-input" id="manualPressure" placeholder="e.g., 1013" min="800" max="1100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Wind Speed (m/s):</label>
+                        <input type="number" class="form-input" id="manualWind" placeholder="e.g., 5.2" step="0.1" min="0" max="150">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="applyStrategy()">
                     <span class="btn-icon">⚡</span>
                     Apply Strategy
                 </button>
@@ -133,35 +151,9 @@
             </section>
         </div>
         <div class="right-panel">
-            <section class="card pattern-card factory-pattern">
-                <div class="pattern-header">
-                    <h3 class="pattern-title">🏭</h3>
-                    <span class="pattern-type">Creational</span>
-                </div>
-                <p class="pattern-description">Create strategies through a centralized factory</p>
-                <div class="pattern-controls">
-                    <select class="form-select" id="factoryType">
-                        <option value="manual">Manual Input</option>
-                        <option value="sensor">Real-Time Sensor</option>
-                        <option value="batch">Scheduled Batch</option>
-                    </select>
-                    <input type="text" class="form-input" id="factoryCity" placeholder="City" value="Almaty" list="cityList">
-                    <button class="btn btn-pattern" onclick="createViaFactory()">
-                        Create Strategy
-                    </button>
-                </div>
-                <button class="btn btn-outline" onclick="getFactoryInfo()">
-                    Learn about Factory
-                </button>
-                <div class="pattern-output" id="factoryOutput">
-                    <div class="output-placeholder">
-                        Create a strategy to see factory output
-                    </div>
-                </div>
-            </section>
             <section class="card pattern-card observer-pattern">
                 <div class="pattern-header">
-                    <h3 class="pattern-title">👀</h3>
+                    <h3 class="pattern-title">👀 Observer Pattern</h3>
                     <span class="pattern-type">Behavioral</span>
                 </div>
                 <p class="pattern-description">Automatic notifications to all subscribers</p>

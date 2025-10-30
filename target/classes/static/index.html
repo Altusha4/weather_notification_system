@@ -9,7 +9,6 @@
 </head>
 <body>
 <div class="app-container">
-    <!-- Header -->
     <header class="app-header">
         <div class="header-content">
             <h1 class="app-title">
@@ -29,12 +28,8 @@
             </div>
         </div>
     </header>
-
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Left Panel - Weather Controls -->
         <div class="left-panel">
-            <!-- Quick Actions -->
             <section class="card quick-actions">
                 <h2 class="card-title">🚀 Quick Actions</h2>
                 <div class="action-buttons">
@@ -48,24 +43,20 @@
                     </button>
                 </div>
             </section>
-
-            <!-- Strategy Pattern -->
             <section class="card strategy-card">
                 <div class="card-header">
                     <h2 class="card-title">🎯 Strategy Pattern</h2>
                     <span class="pattern-badge">Behavioral</span>
                 </div>
                 <p class="card-description">Switch between different weather data update algorithms</p>
-
                 <div class="form-group">
                     <label class="form-label">Select Strategy:</label>
-                    <select class="form-select" id="strategySelect">
+                    <select class="form-select" id="strategySelect" onchange="toggleManualInput()">
                         <option value="manual">📝 Manual Input</option>
                         <option value="sensor">📡 Real-Time Sensor</option>
                         <option value="batch">📦 Scheduled Batch</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label class="form-label">City:</label>
                     <input type="text" class="form-input" id="cityInput" placeholder="Enter city name" value="Astana" list="cityList">
@@ -78,12 +69,28 @@
                         <option value="Aktobe">
                     </datalist>
                 </div>
-
-                <button class="btn btn-success" onclick="setStrategy()">
+                <div id="manualInputFields" class="manual-input-fields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">Temperature (°C):</label>
+                        <input type="number" class="form-input" id="manualTemp" placeholder="e.g., 25.5" step="0.1" min="-50" max="60">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Humidity (%):</label>
+                        <input type="number" class="form-input" id="manualHumidity" placeholder="e.g., 60" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pressure (hPa):</label>
+                        <input type="number" class="form-input" id="manualPressure" placeholder="e.g., 1013" min="800" max="1100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Wind Speed (m/s):</label>
+                        <input type="number" class="form-input" id="manualWind" placeholder="e.g., 5.2" step="0.1" min="0" max="150">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="applyStrategy()">
                     <span class="btn-icon">⚡</span>
                     Apply Strategy
                 </button>
-
                 <div class="strategy-info" id="strategyInfo">
                     <div class="info-item">
                         <span class="info-label">Current:</span>
@@ -91,8 +98,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Current Weather Display -->
             <section class="card weather-card">
                 <h2 class="card-title">🌈 Current Weather</h2>
                 <div class="weather-display" id="weatherData">
@@ -103,8 +108,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Temperature Chart -->
             <section class="card chart-card">
                 <div class="chart-header">
                     <h2 class="card-title">📈 Temperature Monitor</h2>
@@ -124,11 +127,9 @@
                     </div>
                 </div>
                 <p class="card-description">Real-time temperature tracking with history</p>
-
                 <div class="chart-container">
                     <canvas id="temperatureChart"></canvas>
                 </div>
-
                 <div class="chart-stats">
                     <div class="stat">
                         <span class="stat-number" id="currentTemp">-</span>
@@ -149,48 +150,13 @@
                 </div>
             </section>
         </div>
-
-        <!-- Right Panel - Design Patterns -->
         <div class="right-panel">
-            <!-- Factory Pattern -->
-            <section class="card pattern-card factory-pattern">
-                <div class="pattern-header">
-                    <h3 class="pattern-title">🏭 Factory Pattern</h3>
-                    <span class="pattern-type">Creational</span>
-                </div>
-                <p class="pattern-description">Create strategies through a centralized factory</p>
-
-                <div class="pattern-controls">
-                    <select class="form-select" id="factoryType">
-                        <option value="manual">Manual Input</option>
-                        <option value="sensor">Real-Time Sensor</option>
-                        <option value="batch">Scheduled Batch</option>
-                    </select>
-                    <input type="text" class="form-input" id="factoryCity" placeholder="City" value="Almaty" list="cityList">
-                    <button class="btn btn-pattern" onclick="createViaFactory()">
-                        Create Strategy
-                    </button>
-                </div>
-
-                <button class="btn btn-outline" onclick="getFactoryInfo()">
-                    Learn about Factory
-                </button>
-
-                <div class="pattern-output" id="factoryOutput">
-                    <div class="output-placeholder">
-                        Create a strategy to see factory output
-                    </div>
-                </div>
-            </section>
-
-            <!-- Observer Pattern -->
             <section class="card pattern-card observer-pattern">
                 <div class="pattern-header">
                     <h3 class="pattern-title">👀 Observer Pattern</h3>
                     <span class="pattern-type">Behavioral</span>
                 </div>
                 <p class="pattern-description">Automatic notifications to all subscribers</p>
-
                 <div class="pattern-stats">
                     <div class="stat">
                         <span class="stat-number" id="observerCount">0</span>
@@ -201,7 +167,6 @@
                         <span class="stat-label">Updates</span>
                     </div>
                 </div>
-
                 <div class="pattern-controls">
                     <button class="btn btn-pattern" onclick="showObservers()">
                         Show Observers
@@ -210,15 +175,12 @@
                         Add Observer
                     </button>
                 </div>
-
                 <div class="pattern-output" id="observersOutput">
                     <div class="output-placeholder">
                         Click to see observer details
                     </div>
                 </div>
             </section>
-
-            <!-- Singleton Pattern -->
             <section class="card pattern-card singleton-pattern">
                 <div class="pattern-header">
                     <h3 class="pattern-title">👑 Singleton Pattern</h3>
@@ -243,8 +205,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- System Status -->
             <section class="card status-card">
                 <h3 class="card-title">⚙️ System Status</h3>
                 <div class="status-grid">
@@ -263,11 +223,8 @@
             </section>
         </div>
     </main>
-
-    <!-- Notifications -->
     <div id="notificationContainer" class="notification-container"></div>
 </div>
-
 <script src="script.js"></script>
 </body>
 </html>

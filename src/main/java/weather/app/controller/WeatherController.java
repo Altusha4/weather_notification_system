@@ -6,6 +6,7 @@ import weather.core.WeatherData;
 import weather.core.Observer;
 import weather.observers.*;
 import weather.strategy.UpdateStrategy;
+import weather.strategy.ManualInputStrategy;
 import weather.factory.StrategyFactory;
 
 import java.util.HashMap;
@@ -23,38 +24,36 @@ public class WeatherController {
     private final List<Observer> activeObservers = new ArrayList<>();
 
     public WeatherController() {
-        // ✅ ИСПРАВЛЕННАЯ ИНИЦИАЛИЗАЦИЯ Singleton
         this.station = WeatherStation.getInstance();
 
-        // ✅ ИНИЦИАЛИЗАЦИЯ через отдельный метод
         UpdateStrategy initialStrategy = StrategyFactory.create("manual", "Astana");
         this.station.initialize("Web Weather Station", initialStrategy);
 
         setupObservers();
+        System.out.println("[WeatherController] Singleton WeatherStation initialized: " +
+                station.hashCode());
     }
-
     private void setupObservers() {
-        // ✅ ДОБАВЛЕНЫ реальные наблюдатели для веб-интерфейса
         try {
-            // Веб-дисплей для основного интерфейса
             WebDisplay webDisplay = new WebDisplay("Weather Dashboard");
             station.addObserver(webDisplay);
             activeObservers.add(webDisplay);
 
-            // Логгер для отслеживания операций
             LoggerDisplay logger = new LoggerDisplay();
             station.addObserver(logger);
             activeObservers.add(logger);
 
-            // Сборщик истории для данных графиков
             HistoryCollector history = new HistoryCollector();
             station.addObserver(history);
             activeObservers.add(history);
 
-            // Статистика для аналитики
             StatisticsDisplay stats = new StatisticsDisplay();
             station.addObserver(stats);
             activeObservers.add(stats);
+
+            AlertDisplay alerts = new AlertDisplay();
+            station.addObserver(alerts);
+            activeObservers.add(alerts);
 
             System.out.println("[WeatherController] " + activeObservers.size() + " observers initialized");
 
@@ -62,8 +61,6 @@ public class WeatherController {
             System.err.println("[WeatherController] Error setting up observers: " + e.getMessage());
         }
     }
-
-    // ==================== STRATEGY PATTERN ====================
 
     @PostMapping("/strategy")
     public Map<String, Object> setStrategy(@RequestBody Map<String, String> request) {
@@ -73,7 +70,6 @@ public class WeatherController {
             String strategyType = request.get("type");
             String city = request.get("city");
 
-            // ✅ ДОБАВЛЕНА валидация входных данных
             if (strategyType == null || strategyType.trim().isEmpty()) {
                 response.put("status", "error");
                 response.put("message", "Strategy type is required");
@@ -94,7 +90,6 @@ public class WeatherController {
             response.put("stationStatus", station.getStatus());
 
         } catch (Exception e) {
-            // ✅ ДОБАВЛЕНА обработка ошибок
             response.put("status", "error");
             response.put("message", "Failed to set strategy: " + e.getMessage());
         }
@@ -114,7 +109,7 @@ public class WeatherController {
             response.put("message", "Weather data updated successfully");
             response.put("data", convertToMap(data));
             response.put("strategy", station.getCurrentStrategyName());
-            response.put("observersNotified", activeObservers.size());
+            response.put("observersNotified", station.getObserverCount());
 
         } catch (Exception e) {
             response.put("status", "error");
@@ -130,104 +125,59 @@ public class WeatherController {
         strategies.put("available", List.of("manual", "sensor", "batch"));
         strategies.put("current", station.getCurrentStrategyName());
         strategies.put("pattern", "Strategy Pattern");
-        strategies.put("description", "Разные алгоритмы получения погодных данных");
+        strategies.put("description", "Different algorithms for fetching weather data");
         strategies.put("usage", "POST /api/weather/strategy with {type, city}");
         return strategies;
     }
 
-    // ==================== OBSERVER PATTERN ====================
-
-    @GetMapping("/observers")
-    public Map<String, Object> getObserversInfo() {
-        Map<String, Object> info = new HashMap<>();
-        info.put("pattern", "Observer Pattern");
-        info.put("totalCount", station.getObservers().size());
-        info.put("activeCount", activeObservers.size());
-        info.put("types", station.getObservers().stream()
-                .map(o -> o.getClass().getSimpleName())
-                .collect(Collectors.toList()));
-        info.put("activeObservers", activeObservers.stream()
-                .map(o -> o.getClass().getSimpleName())
-                .collect(Collectors.toList()));
-        info.put("description", "Автоматические уведомления всех подписчиков");
-        return info;
-    }
-
-    @PostMapping("/observers/add")
-    public Map<String, Object> addObserver(@RequestBody Map<String, String> request) {
+    @PostMapping("/manual/data")
+    public Map<String, Object> setManualData(@RequestBody Map<String, Object> manualData) {
         Map<String, Object> response = new HashMap<>();
 
         try {
-            String type = request.get("type");
-            String name = request.get("name");
+            String city = (String) manualData.get("city");
+            double temperature = ((Number) manualData.get("temperature")).doubleValue();
+            double humidity = ((Number) manualData.get("humidity")).doubleValue();
+            double pressure = ((Number) manualData.get("pressure")).doubleValue();
+            double windSpeed = ((Number) manualData.get("windSpeed")).doubleValue();
 
-            if (type == null) {
-                response.put("status", "error");
-                response.put("message", "Observer type is required");
-                return response;
+            if (temperature < -50 || temperature > 60) {
+                throw new IllegalArgumentException("Temperature must be between -50 and 60°C");
+            }
+            if (humidity < 0 || humidity > 100) {
+                throw new IllegalArgumentException("Humidity must be between 0 and 100%");
+            }
+            if (pressure < 800 || pressure > 1100) {
+                throw new IllegalArgumentException("Pressure must be between 800 and 1100 hPa");
+            }
+            if (windSpeed < 0 || windSpeed > 150) {
+                throw new IllegalArgumentException("Wind speed must be between 0 and 150 m/s");
             }
 
-            Observer newObserver = createObserverByType(type, name);
-            if (newObserver != null) {
-                station.addObserver(newObserver);
-                activeObservers.add(newObserver);
+            UpdateStrategy currentStrategy = getCurrentStrategy();
+            if (currentStrategy instanceof ManualInputStrategy) {
+                ManualInputStrategy manualStrategy = (ManualInputStrategy) currentStrategy;
+                manualStrategy.setManualData(city, temperature, humidity, pressure, windSpeed);
 
                 response.put("status", "success");
-                response.put("message", "Observer added: " + type);
-                response.put("observerType", newObserver.getClass().getSimpleName());
-                response.put("totalObservers", station.getObservers().size());
+                response.put("message", "Manual data set successfully");
+                response.put("city", city);
+                response.put("temperature", temperature);
+                response.put("humidity", humidity);
+                response.put("pressure", pressure);
+                response.put("windSpeed", windSpeed);
             } else {
                 response.put("status", "error");
-                response.put("message", "Unknown observer type: " + type);
+                response.put("message", "Current strategy is not ManualInput. Please set manual strategy first.");
             }
 
         } catch (Exception e) {
             response.put("status", "error");
-            response.put("message", "Failed to add observer: " + e.getMessage());
+            response.put("message", "Failed to set manual data: " + e.getMessage());
         }
 
         return response;
     }
-
-    @PostMapping("/observers/remove")
-    public Map<String, Object> removeObserver(@RequestBody Map<String, String> request) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            String type = request.get("type");
-
-            if (type != null) {
-                // Находим и удаляем первый наблюдатель указанного типа
-                Observer toRemove = activeObservers.stream()
-                        .filter(o -> o.getClass().getSimpleName().toLowerCase().contains(type.toLowerCase()))
-                        .findFirst()
-                        .orElse(null);
-
-                if (toRemove != null) {
-                    station.removeObserver(toRemove);
-                    activeObservers.remove(toRemove);
-
-                    response.put("status", "success");
-                    response.put("message", "Observer removed: " + type);
-                    response.put("removedType", toRemove.getClass().getSimpleName());
-                } else {
-                    response.put("status", "error");
-                    response.put("message", "Observer not found: " + type);
-                }
-            } else {
-                response.put("status", "error");
-                response.put("message", "Observer type is required");
-            }
-
-        } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", "Failed to remove observer: " + e.getMessage());
-        }
-
-        return response;
-    }
-
-    // ==================== FACTORY PATTERN ====================
 
     @GetMapping("/factory/strategies")
     public Map<String, Object> getFactoryInfo() {
@@ -235,7 +185,7 @@ public class WeatherController {
         info.put("pattern", "Factory Pattern");
         info.put("availableStrategies", List.of("manual", "sensor", "batch"));
         info.put("factoryMethod", "StrategyFactory.create(type, city)");
-        info.put("description", "Централизованное создание объектов стратегий");
+        info.put("description", "Centralized object creation");
         info.put("usageExample", "StrategyFactory.create(\"sensor\", \"Astana\")");
         return info;
     }
@@ -262,7 +212,7 @@ public class WeatherController {
             response.put("createdStrategy", strategy.getClass().getSimpleName());
             response.put("type", type);
             response.put("city", city);
-            response.put("description", "Стратегия создана через фабрику");
+            response.put("description", "Strategy created via factory");
 
         } catch (Exception e) {
             response.put("status", "error");
@@ -272,22 +222,71 @@ public class WeatherController {
         return response;
     }
 
-    // ==================== SINGLETON PATTERN ====================
+    @GetMapping("/observers")
+    public Map<String, Object> getObserversInfo() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("pattern", "Observer Pattern");
+        info.put("totalCount", station.getObserverCount());
+        info.put("activeCount", activeObservers.size());
+        info.put("types", station.getObservers().stream()
+                .map(o -> o.getClass().getSimpleName())
+                .collect(Collectors.toList()));
+        info.put("activeObservers", activeObservers.stream()
+                .map(o -> o.getClass().getSimpleName())
+                .collect(Collectors.toList()));
+        info.put("description", "Automatic notifications to all subscribers");
+        return info;
+    }
+
+    @PostMapping("/observers/add")
+    public Map<String, Object> addObserver(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String type = request.get("type");
+            String name = request.get("name");
+
+            if (type == null) {
+                response.put("status", "error");
+                response.put("message", "Observer type is required");
+                return response;
+            }
+
+            Observer newObserver = createObserverByType(type, name);
+            if (newObserver != null) {
+                station.addObserver(newObserver);
+                activeObservers.add(newObserver);
+
+                response.put("status", "success");
+                response.put("message", "Observer added: " + type);
+                response.put("observerType", newObserver.getClass().getSimpleName());
+                response.put("totalObservers", station.getObserverCount());
+            } else {
+                response.put("status", "error");
+                response.put("message", "Unknown observer type: " + type);
+            }
+
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Failed to add observer: " + e.getMessage());
+        }
+
+        return response;
+    }
 
     @GetMapping("/singleton")
     public Map<String, Object> getSingletonInfo() {
         Map<String, Object> info = new HashMap<>();
         info.put("pattern", "Singleton Pattern");
         info.put("implementation", "WeatherStation.getInstance()");
-        info.put("purpose", "Единственный экземпляр WeatherStation в системе");
+        info.put("purpose", "Single instance of WeatherStation in the system");
         info.put("instanceHash", station.hashCode());
         info.put("stationName", station.getName());
-        info.put("description", "Гарантирует единственный экземпляр станции");
+        info.put("description", "Guarantees only one instance of weather station");
         info.put("currentInstance", station.getStatus());
+        info.put("isInitialized", WeatherStation.isInitialized());
         return info;
     }
-
-    // ==================== WEATHER DATA OPERATIONS ====================
 
     @GetMapping("/current")
     public Map<String, Object> getCurrentWeather() {
@@ -307,55 +306,23 @@ public class WeatherController {
         return response;
     }
 
-    @PostMapping("/manual")
-    public Map<String, Object> manualWeatherUpdate(@RequestBody Map<String, Object> weatherRequest) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            // Временно переключаемся на ручную стратегию
-            UpdateStrategy manualStrategy = StrategyFactory.create("manual", "Manual Input");
-            station.setStrategy(manualStrategy);
-
-            // Обновляем погоду (пользователь введет данные в консоли)
-            station.updateWeather();
-            WeatherData data = station.getLastData();
-
-            response.put("status", "success");
-            response.put("message", "Manual weather data received");
-            response.put("data", convertToMap(data));
-
-        } catch (Exception e) {
-            response.put("status", "error");
-            response.put("message", "Manual update failed: " + e.getMessage());
-        }
-
-        return response;
-    }
-
-    // ==================== SYSTEM STATUS & INFO ====================
-
     @GetMapping("/status")
     public Map<String, Object> getStatus() {
         Map<String, Object> status = new HashMap<>();
         status.put("stationName", station.getName());
         status.put("strategy", station.getCurrentStrategyName());
         status.put("stationStatus", station.getStatus());
-        status.put("activeObservers", activeObservers.size());
+        status.put("activeObservers", station.getObserverCount());
+        status.put("hasData", station.hasData());
         status.put("lastUpdate", station.getLastData() != null ?
                 station.getLastData().getTimestamp().toString() : "Never");
+        status.put("singletonInstance", station.hashCode());
 
         if (station.getLastData() != null) {
             status.put("lastData", convertToMap(station.getLastData()));
         }
 
         status.put("patterns", List.of("Strategy", "Observer", "Factory", "Singleton"));
-        status.put("endpoints", List.of(
-                "GET /api/weather/current",
-                "POST /api/weather/update",
-                "POST /api/weather/strategy",
-                "GET /api/weather/observers",
-                "GET /api/weather/patterns"
-        ));
 
         return status;
     }
@@ -365,44 +332,34 @@ public class WeatherController {
         Map<String, Object> patterns = new HashMap<>();
 
         patterns.put("Strategy Pattern", Map.of(
-                "purpose", "Разные алгоритмы получения данных",
-                "classes", "UpdateStrategy, ManualInputStrategy, RealTimeSensorStrategy, ScheduledBatchStrategy",
-                "usage", "Переключение стратегий в runtime",
+                "purpose", "Different data fetching algorithms",
+                "classes", "UpdateStrategy + 3 implementations",
+                "usage", "Runtime strategy switching",
                 "endpoint", "POST /api/weather/strategy"
         ));
 
         patterns.put("Observer Pattern", Map.of(
-                "purpose", "Уведомление подписчиков об изменениях",
-                "classes", "Subject, Observer, WeatherStation, PhoneDisplay, WebDisplay, etc.",
-                "usage", "Автоматическое обновление всех дисплеев",
+                "purpose", "Notify subscribers of changes",
+                "classes", "Subject + Observer + 6 implementations",
+                "usage", "Automatic display updates",
                 "endpoint", "GET /api/weather/observers"
         ));
 
         patterns.put("Factory Pattern", Map.of(
-                "purpose", "Централизованное создание объектов",
+                "purpose", "Centralized object creation",
                 "classes", "StrategyFactory",
                 "usage", "StrategyFactory.create(type, city)",
-                "endpoint", "POST /api/weather/factory/create"
+                "endpoint", "GET /api/weather/factory/strategies"
         ));
 
         patterns.put("Singleton Pattern", Map.of(
-                "purpose", "Единственный экземпляр класса",
+                "purpose", "Single class instance",
                 "classes", "WeatherStation.getInstance()",
-                "usage", "Глобальный доступ к WeatherStation",
+                "usage", "Global access to WeatherStation",
                 "endpoint", "GET /api/weather/singleton"
         ));
 
         return patterns;
-    }
-
-    @GetMapping("/chart/history")
-    public Map<String, Object> getChartHistory() {
-        Map<String, Object> history = new HashMap<>();
-        // Здесь можно добавить логику для получения исторических данных
-        history.put("message", "Chart history endpoint ready");
-        history.put("maxDataPoints", 20);
-        history.put("availableMetrics", List.of("temperature", "humidity", "pressure", "windSpeed"));
-        return history;
     }
 
     @GetMapping("/")
@@ -410,20 +367,22 @@ public class WeatherController {
         Map<String, Object> info = new HashMap<>();
         info.put("application", "Weather Notification System");
         info.put("version", "1.0");
-        info.put("description", "REST API for Weather System with Design Patterns");
+        info.put("description", "REST API for Weather System with 4 Design Patterns");
         info.put("patterns", List.of("Strategy", "Observer", "Factory", "Singleton"));
         info.put("documentation", "Visit /api/weather/patterns for pattern details");
         info.put("endpoints", Map.of(
                 "current", "GET /api/weather/current",
                 "update", "POST /api/weather/update",
                 "strategy", "POST /api/weather/strategy",
+                "manual", "POST /api/weather/manual/data",
+                "factory", "POST /api/weather/factory/create",
                 "status", "GET /api/weather/status",
-                "patterns", "GET /api/weather/patterns"
+                "patterns", "GET /api/weather/patterns",
+                "singleton", "GET /api/weather/singleton",
+                "observers", "GET /api/weather/observers"
         ));
         return info;
     }
-
-    // ==================== PRIVATE HELPER METHODS ====================
 
     private Map<String, Object> convertToMap(WeatherData data) {
         Map<String, Object> map = new HashMap<>();
@@ -465,5 +424,8 @@ public class WeatherController {
             default:
                 return null;
         }
+    }
+    private UpdateStrategy getCurrentStrategy() {
+        return station.getCurrentStrategy();
     }
 }
